@@ -16,11 +16,12 @@ import { Task, TaskStatus } from '../lib/types';
 import { DroppableColumn } from './DroppableColumn';
 import { AddTaskDialog } from './AddTaskDialog';
 import { EditTaskDialog } from './EditTaskDialog';
+import { DarkModeToggle } from './DarkModeToggle';
 
 const columns: { id: TaskStatus; title: string; color: string }[] = [
-  { id: 'todo', title: 'TODO', color: 'bg-gray-100' },
-  { id: 'in-progress', title: '進行中', color: 'bg-blue-100' },
-  { id: 'done', title: '完了', color: 'bg-green-100' },
+  { id: 'todo', title: 'TODO', color: 'bg-gray-100 dark:bg-gray-800' },
+  { id: 'in-progress', title: '進行中', color: 'bg-blue-100 dark:bg-blue-900/40' },
+  { id: 'done', title: '完了', color: 'bg-green-100 dark:bg-green-900/40' },
 ];
 
 export function KanbanBoard() {
@@ -92,25 +93,28 @@ export function KanbanBoard() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8">
           {/* ヘッダー */}
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 カンバンボード
               </h1>
-              <button
-                onClick={() => setIsAddDialogOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg"
-              >
-                + タスクを追加
-              </button>
+              <div className="flex gap-3 items-center">
+                <DarkModeToggle />
+                <button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                >
+                  + タスクを追加
+                </button>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               📁 保存先: <span className="font-mono">{directoryName}</span>
             </div>
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               全 {tasks.length} 件のタスク
             </div>
           </div>
@@ -141,12 +145,12 @@ export function KanbanBoard() {
 
             <DragOverlay>
               {activeTask ? (
-                <div className="bg-white rounded-lg shadow-xl border-2 border-blue-500 p-4 cursor-grabbing opacity-90">
-                  <h3 className="font-semibold text-gray-900">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-blue-500 dark:border-blue-400 p-4 cursor-grabbing opacity-90">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                     {activeTask.title}
                   </h3>
                   {activeTask.description && (
-                    <p className="text-gray-600 text-sm mt-2">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
                       {activeTask.description}
                     </p>
                   )}
