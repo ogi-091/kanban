@@ -8,7 +8,8 @@ let directoryHandle: FileSystemDirectoryHandle | null = null;
  * File System Access APIがサポートされているかチェック
  */
 export function isFileSystemAccessSupported(): boolean {
-  return 'showDirectoryPicker' in window;
+  // サーバー側では window が存在しないため、チェックが必要
+  return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
 }
 
 /**

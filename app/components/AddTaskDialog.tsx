@@ -49,7 +49,7 @@ export function AddTaskDialog({ isOpen, onClose, onAdd }: AddTaskDialogProps) {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
               placeholder="タスクのタイトルを入力"
               autoFocus
               required
@@ -66,7 +66,7 @@ export function AddTaskDialog({ isOpen, onClose, onAdd }: AddTaskDialogProps) {
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-gray-900"
               placeholder="タスクの説明を入力（任意）"
               rows={4}
             />
