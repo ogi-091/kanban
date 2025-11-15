@@ -2,6 +2,8 @@
 
 import { AppView } from '../lib/types';
 import { DarkModeToggle } from './DarkModeToggle';
+import { useNotes } from '../lib/notesStore';
+import { Note } from '../lib/types';
 
 interface SidebarProps {
   currentView: AppView;
@@ -9,6 +11,7 @@ interface SidebarProps {
   directoryName: string | null;
   isMobileOpen: boolean;
   onMobileClose: () => void;
+  onSelectNote: (note: Note) => void;
 }
 
 export function Sidebar({
@@ -17,10 +20,22 @@ export function Sidebar({
   directoryName,
   isMobileOpen,
   onMobileClose,
+  onSelectNote,
 }: SidebarProps) {
+  const { notes } = useNotes();
+  
+  // お気に入りのメモのみを取得
+  const favoriteNotes = notes.filter((note) => note.isFavorite);
+
   const handleViewChange = (view: AppView) => {
     onViewChange(view);
     onMobileClose(); // モバイルでビュー変更したらサイドバーを閉じる
+  };
+
+  const handleSelectNote = (note: Note) => {
+    onSelectNote(note);
+    onViewChange('notes'); // メモビューに切り替え
+    onMobileClose(); // モバイルでメモ選択したらサイドバーを閉じる
   };
 
   return (
@@ -78,56 +93,98 @@ export function Sidebar({
         </div>
 
         {/* ナビゲーション */}
-        <nav className="flex-1 p-3 space-y-1">
-          <button
-            onClick={() => handleViewChange('kanban')}
-            className={`
-              w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              ${
-                currentView === 'kanban'
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }
-            `}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <nav className="flex-1 p-3 overflow-y-auto">
+          <div className="space-y-1 mb-6">
+            <button
+              onClick={() => handleViewChange('kanban')}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                ${
+                  currentView === 'kanban'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }
+              `}
             >
-              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-            </svg>
-            <span>タスク管理</span>
-          </button>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              <span>タスク管理</span>
+            </button>
 
-          <button
-            onClick={() => handleViewChange('notes')}
-            className={`
-              w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              ${
-                currentView === 'notes'
-                  ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }
-            `}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <button
+              onClick={() => handleViewChange('notes')}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                ${
+                  currentView === 'notes'
+                    ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }
+              `}
             >
-              <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            <span>メモ</span>
-          </button>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>メモ</span>
+            </button>
+          </div>
+
+          {/* お気に入りセクション */}
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                お気に入り
+              </h3>
+            </div>
+            <div className="space-y-0.5">
+              {favoriteNotes.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                  お気に入りなし
+                </div>
+              ) : (
+                favoriteNotes.map((note) => (
+                  <button
+                    key={note.id}
+                    onClick={() => handleSelectNote(note)}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left group"
+                    title={note.title || '無題のメモ'}
+                  >
+                    <svg
+                      className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="truncate flex-1">
+                      {note.title || '無題のメモ'}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
         </nav>
 
         {/* フッター（保存先情報） */}

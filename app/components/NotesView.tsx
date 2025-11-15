@@ -1,16 +1,28 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Note } from '../lib/types';
 import { useNotes } from '../lib/notesStore';
 import { NoteCard } from './NoteCard';
 import { NoteEditor } from './NoteEditor';
 
-export function NotesView() {
+interface NotesViewProps {
+  selectedNote?: Note | null;
+  onNoteClose?: () => void;
+}
+
+export function NotesView({ selectedNote, onNoteClose }: NotesViewProps) {
   const { notes, addNote, updateNote, deleteNote, toggleFavorite } = useNotes();
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // サイドバーからメモが選択された時に開く
+  useEffect(() => {
+    if (selectedNote) {
+      setEditingNote(selectedNote);
+    }
+  }, [selectedNote]);
 
   // フィルターと検索を適用
   const filteredNotes = useMemo(() => {
@@ -57,6 +69,12 @@ export function NotesView() {
   ) => {
     await updateNote(id, { title, content, tags });
     setEditingNote(null);
+    onNoteClose?.();
+  };
+
+  const handleCloseEditor = () => {
+    setEditingNote(null);
+    onNoteClose?.();
   };
 
   return (
@@ -218,7 +236,7 @@ export function NotesView() {
         <NoteEditor
           note={editingNote}
           onSave={handleSaveNote}
-          onClose={() => setEditingNote(null)}
+          onClose={handleCloseEditor}
         />
       )}
     </>

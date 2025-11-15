@@ -7,6 +7,7 @@ import { DirectorySelector } from './components/DirectorySelector';
 import { KanbanBoard } from './components/KanbanBoard';
 import { NotesView } from './components/NotesView';
 import { Sidebar } from './components/Sidebar';
+import { Note } from './lib/types';
 
 export default function Home() {
   const {
@@ -19,6 +20,7 @@ export default function Home() {
     showToast,
   } = useKanban();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const handleSelectDirectory = async () => {
     await initializeDirectory();
@@ -54,6 +56,7 @@ export default function Home() {
           directoryName={directoryName}
           isMobileOpen={isMobileSidebarOpen}
           onMobileClose={() => setIsMobileSidebarOpen(false)}
+          onSelectNote={setSelectedNote}
         />
 
         {/* メインコンテンツエリア */}
@@ -79,7 +82,14 @@ export default function Home() {
           </div>
 
           {/* ビューの切り替え */}
-          {currentView === 'kanban' ? <KanbanBoard /> : <NotesView />}
+          {currentView === 'kanban' ? (
+            <KanbanBoard />
+          ) : (
+            <NotesView
+              selectedNote={selectedNote}
+              onNoteClose={() => setSelectedNote(null)}
+            />
+          )}
         </main>
       </div>
     </NotesProvider>
