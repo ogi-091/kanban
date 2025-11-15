@@ -17,6 +17,7 @@ import { DroppableColumn } from './DroppableColumn';
 import { AddTaskDialog } from './AddTaskDialog';
 import { EditTaskDialog } from './EditTaskDialog';
 import { DarkModeToggle } from './DarkModeToggle';
+import { ToastContainer } from './Toast';
 
 const columns: { id: TaskStatus; title: string; color: string }[] = [
   { id: 'todo', title: 'TODO', color: 'bg-gray-100 dark:bg-gray-800' },
@@ -25,12 +26,13 @@ const columns: { id: TaskStatus; title: string; color: string }[] = [
 ];
 
 export function KanbanBoard() {
-  const { tasks, addTask, updateTask, deleteTask, moveTask, directoryName } =
+  const { tasks, addTask, updateTask, deleteTask, moveTask, directoryName, toasts, removeToast } =
     useKanban();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -47,7 +49,7 @@ export function KanbanBoard() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
 
@@ -58,12 +60,26 @@ export function KanbanBoard() {
 
     // カラムIDの場合（タスクを別のカラムにドロップ）
     if (['todo', 'in-progress', 'done'].includes(newStatus)) {
-      moveTask(taskId, newStatus);
+      try {
+        setIsProcessing(true);
+        await moveTask(taskId, newStatus);
+      } catch (error) {
+        console.error('Failed to move task:', error);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
   const handleAddTask = async (title: string, description: string) => {
-    await addTask(title, description);
+    try {
+      setIsProcessing(true);
+      await addTask(title, description);
+    } catch (error) {
+      console.error('Failed to add task:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleEditTask = (task: Task) => {
@@ -76,14 +92,28 @@ export function KanbanBoard() {
     title: string,
     description: string
   ) => {
-    await updateTask(id, { title, description });
-    setIsEditDialogOpen(false);
-    setEditingTask(null);
+    try {
+      setIsProcessing(true);
+      await updateTask(id, { title, description });
+      setIsEditDialogOpen(false);
+      setEditingTask(null);
+    } catch (error) {
+      console.error('Failed to update task:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleDeleteTask = async (id: string) => {
     if (confirm('このタスクを削除してもよろしいですか？')) {
-      await deleteTask(id);
+      try {
+        setIsProcessing(true);
+        await deleteTask(id);
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -93,6 +123,9 @@ export function KanbanBoard() {
 
   return (
     <>
+      {/* トースト通知 */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-8">
           {/* ヘッダー */}
@@ -105,7 +138,8 @@ export function KanbanBoard() {
                 <DarkModeToggle />
                 <button
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg"
+                  disabled={isProcessing}
+                  className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   + タスクを追加
                 </button>
