@@ -1,8 +1,58 @@
-import { KanbanData } from './types';
+import { KanbanData, Task } from './types';
 
 const FILE_NAME = 'kanban-data.json';
 
 let directoryHandle: FileSystemDirectoryHandle | null = null;
+
+/**
+ * KanbanDataの型チェック
+ */
+function isValidKanbanData(data: unknown): data is KanbanData {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // tasksプロパティの確認
+  if (!Array.isArray(obj.tasks)) {
+    return false;
+  }
+
+  // 各タスクの型チェック
+  for (const task of obj.tasks) {
+    if (!isValidTask(task)) {
+      return false;
+    }
+  }
+
+  // lastModifiedプロパティの確認
+  if (typeof obj.lastModified !== 'string') {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Taskの型チェック
+ */
+function isValidTask(task: unknown): task is Task {
+  if (!task || typeof task !== 'object') {
+    return false;
+  }
+
+  const obj = task as Record<string, unknown>;
+
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.title === 'string' &&
+    typeof obj.description === 'string' &&
+    (obj.status === 'todo' || obj.status === 'in-progress' || obj.status === 'done') &&
+    typeof obj.createdAt === 'string' &&
+    typeof obj.updatedAt === 'string'
+  );
+}
 
 /**
  * File System Access APIがサポートされているかチェック
@@ -40,26 +90,31 @@ export async function selectDirectory(): Promise<boolean> {
  * 保存されたディレクトリハンドルのアクセス権限をチェック
  */
 export async function checkPermission(): Promise<boolean> {
-  if (!directoryHandle) {
-    return false;
-  }
+  try {
+    if (!directoryHandle) {
+      return false;
+    }
 
-  const permission = await directoryHandle.queryPermission({
-    mode: 'readwrite',
-  });
-
-  if (permission === 'granted') {
-    return true;
-  }
-
-  if (permission === 'prompt') {
-    const newPermission = await directoryHandle.requestPermission({
+    const permission = await directoryHandle.queryPermission({
       mode: 'readwrite',
     });
-    return newPermission === 'granted';
-  }
 
-  return false;
+    if (permission === 'granted') {
+      return true;
+    }
+
+    if (permission === 'prompt') {
+      const newPermission = await directoryHandle.requestPermission({
+        mode: 'readwrite',
+      });
+      return newPermission === 'granted';
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Failed to check permission:', error);
+    return false;
+  }
 }
 
 /**
@@ -68,12 +123,12 @@ export async function checkPermission(): Promise<boolean> {
 export async function saveKanbanData(data: KanbanData): Promise<void> {
   try {
     if (!directoryHandle) {
-      throw new Error('Directory not selected');
+      throw new Error('保存先ディレクトリが選択されていません。');
     }
 
     const hasPermission = await checkPermission();
     if (!hasPermission) {
-      throw new Error('Permission denied');
+      throw new Error('ディレクトリへのアクセス権限がありません。');
     }
 
     const fileHandle = await directoryHandle.getFileHandle(FILE_NAME, {
@@ -87,7 +142,15 @@ export async function saveKanbanData(data: KanbanData): Promise<void> {
     console.log('Data saved successfully');
   } catch (error) {
     console.error('Failed to save data:', error);
-    throw error;
+    
+    // ユーザーフレンドリーなエラーメッセージに変換
+    if (error instanceof Error) {
+      if (error.message.includes('保存先') || error.message.includes('アクセス権限')) {
+        throw error;
+      }
+      throw new Error(`データの保存に失敗しました: ${error.message}`);
+    }
+    throw new Error('データの保存に失敗しました。');
   }
 }
 
@@ -109,17 +172,40 @@ export async function loadKanbanData(): Promise<KanbanData | null> {
     const file = await fileHandle.getFile();
     const contents = await file.text();
     
-    const data = JSON.parse(contents) as KanbanData;
+    // JSONのパース
+    let parsedData: unknown;
+    try {
+      parsedData = JSON.parse(contents);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError);
+      throw new Error('データファイルの形式が正しくありません。');
+    }
+
+    // データのバリデーション
+    if (!isValidKanbanData(parsedData)) {
+      console.error('Invalid data structure:', parsedData);
+      throw new Error('データファイルの構造が正しくありません。');
+    }
+
     console.log('Data loaded successfully');
-    return data;
+    return parsedData;
   } catch (error) {
     if ((error as Error).name === 'NotFoundError') {
       // ファイルが存在しない場合は null を返す
       console.log('No existing data file found');
       return null;
     }
+    
     console.error('Failed to load data:', error);
-    throw error;
+    
+    // ユーザーフレンドリーなエラーメッセージに変換
+    if (error instanceof Error) {
+      if (error.message.includes('データファイル')) {
+        throw error;
+      }
+      throw new Error(`データの読み込みに失敗しました: ${error.message}`);
+    }
+    throw new Error('データの読み込みに失敗しました。');
   }
 }
 
